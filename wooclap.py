@@ -35,14 +35,15 @@ def attack_mcq_question(question, users):
 
     if question['multipleChoice']:
         print("\nThis is a multiple-choice question. To select several answers, answer like this: '0+2'.")
-        answer = input("Which answer(s) do you want to respond?\n> ").split('+')
+        answer = input("Which answer(s) do you want to respond?  ('-1' return to the menu)\n> ").split('+')
         choices = [question['choices'][int(r)-1]['_id'] for r in answer]
     else:
-        answer = int(input("Which answer do you want to respond?\n> "))
-        choices = [question['choices'][answer-1]['_id']]
+        answer = input("Which answer do you want to respond?  ('-1' return to the menu)\n> ")
+        choices = [question['choices'][int(answer)-1]['_id']]
+    if answer == "-1": # Donne l'occasion à l'utilisateur de revenir au menu
+        return
 
-    #Prend au maximum le nombre de bots dans la liste
-    spam_number = min(int(input(f"How many of them do you want to spam (max: {len(users)})?\n> ")), len(users))
+    spam_number = min(int(input(f"How many of them do you want to spam (max: {len(users)})?\n> ")), len(users)) # Prend au maximum le nombre de bots dans la liste
 
     for i in range(spam_number):
         headers = get_wooclap_headers(users[i])
@@ -54,7 +55,9 @@ def attack_open_question(question, users):
     print(f"______Open question______\n\nTitle: {question['title']}")
     if question['allExpectedAnswers']:
         print(f"Expected answers: {question['allExpectedAnswers']}")
-    answer = input("What do you want to answer?\n> ")
+    answer = input("What do you want to answer? ('-1' return to the menu)\n> ")
+    if answer == "-1": # Donne l'occasion à l'utilisateur de revenir au menu
+        return
 
     json_data = {'text': answer, 'image': None}
     answer_response = requests.post(f'https://app.wooclap.com/api/questions/{question["_id"]}/push_answer', headers=headers, json=json_data)
@@ -112,8 +115,7 @@ while True:
     number_of_questions = len(data["questions"])
     id_in_number = 0
 
-    #Si il n'arrive pas à trouver une question sélectionnée, il revient au menu 
-    try:
+    try: # Si il n'arrive pas à trouver une question sélectionnée, il revient au menu 
         for i in range(number_of_questions):
             if data["questions"][i]["_id"] == data["selectedQuestion"]:
                 break

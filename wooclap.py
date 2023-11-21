@@ -27,11 +27,11 @@ def get_event_data(event_code, user_id):
 def add_users(users, n):
     return users + generate_users(n)
 
-def attack_mcq_question(question, users):
+def attack_mcq_question(question, users, questionType):
     choices = []
-    print(f"______QCM______\n\nQuestion: {question['title']}")
+    print(f"______{questionType}______\n\nQuestion: {question['title']}")
     for i, choice in enumerate(question['choices'], start=1):
-        print(f"[{i}] {choice['choice']} [Correct: {choice['isCorrect']}]")
+        print(f"[{i}] {choice['choice']}" + ("[Correct: {choice['isCorrect']}]" if questionType == "MCQ" else ""))
 
     if question['multipleChoice']:
         print("\nThis is a multiple-choice question. To select several answers, answer like this: '0+2'.")
@@ -124,7 +124,7 @@ while True:
     except:
         continue
 
-    if question["__t"] == "MCQ":
-        attack_mcq_question(question, list_of_users)
+    if question["__t"] == "MCQ" or question["__t"] == "Poll":
+        attack_mcq_question(question, list_of_users, question["__t"])
     elif question["__t"] == "OpenQuestion":
         attack_open_question(question, list_of_users)

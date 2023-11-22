@@ -6,7 +6,7 @@ import requests
 import random
 import os
 
-id_last_user_answered = {} # Sauvegarde l'index du dernier utilisateur à avoir répondu
+id_last_user_answered = {} # Dictionnaire qui sauvegarde le dernier bot à avoir répondu par question (id)
 
 def generate_users(n):
     return [random.randint(100000000000, 999999999999) for _ in range(n)]
@@ -78,10 +78,9 @@ def attack_open_question(question, users):
     if not question['_id'] in id_last_user_answered:
         id_last_user_answered[question['_id']] = 0
 
-    if len(users)-id_last_user_answered[question['_id']] == 0:
-        return
+    if len(users)-id_last_user_answered[question['_id']] == 0 and not question['multipleAnswers']: # Si tous les utilisateurs ont été utilisés pour répondre 
+        return                                                                                     # et qu'on peut répondre qu'à une seule question
         
-    headers = get_wooclap_headers(users[id_last_user_answered[question['_id']]])
     print(f"______Open question______\n\nTitle: {question['title']}")
 
     if question['allExpectedAnswers']:
@@ -89,15 +88,17 @@ def attack_open_question(question, users):
 
     if not question['multipleAnswers']:
         print(len(users)-id_last_user_answered[question['_id']],"réponses restantes")
-    
-    id_last_user_answered[question['_id']] += 1
 
     answer = input("What do you want to answer? ('-1' return to the menu)\n> ").strip()
 
     if answer == "-1": # Donne l'occasion à l'utilisateur de revenir au menu
         return
-
+    
+    if not len(users)-id_last_user_answered[question['_id']] == 0: # Par précaution même si on peut répondre plusieurs fois on compte
+        id_last_user_answered[question['_id']] += 1                # pour si le paramètre est changé par le professeur, dans ce cas là
+                                                                   # on ne pourrait plus répondre si on a atteint le quota 
     json_data = {'text': answer, 'image': None}
+    headers = get_wooclap_headers(users[id_last_user_answered[question['_id']]] if not question['multipleAnswers'] else users[0])
     response = requests.post(f'https://app.wooclap.com/api/questions/{question["_id"]}/push_answer', headers=headers, json=json_data)
     response = response.json()
 

@@ -34,6 +34,12 @@ def attack_mcq_question(question, users, questionType):
 
     if not question['_id'] in id_last_user_answered:
         id_last_user_answered[question['_id']] = 0
+    
+    number_of_users = len(users)
+    available_users = number_of_users-id_last_user_answered[question['_id']]
+
+    if available_users == 0:
+        return
 
     choices = []
     print(f"______{questionType}______\n\nQuestion: {question['title']}")
@@ -53,10 +59,8 @@ def attack_mcq_question(question, users, questionType):
     if answer == "-1": # Donne l'occasion à l'utilisateur de revenir au menu
         return
 
-    number_of_users = len(users)
-
     start = 0
-    end = int(input(f"How many of them do you want to spam (max: {number_of_users-id_last_user_answered[question['_id']]})?\n> "))+id_last_user_answered[question['_id']]
+    end = int(input(f"How many of them do you want to spam (max: {available_users})?\n> "))+id_last_user_answered[question['_id']]
 
     if end > number_of_users:
         end = number_of_users

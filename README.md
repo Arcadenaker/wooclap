@@ -13,5 +13,5 @@ Cela a pour but de **ne pas trop augmenter le nombre d'utilisateurs actifs sur l
 
 * Répondre autant de fois que vous avez de bots sur les questions ouvertes
 * Vous donner le nombre de likes voulu sur votre réponse à la question ouverte
-* Spammer une réponse à un QCM
+* Spammer une réponse à un QCM ou Poll
 * Plus encore par la suite...

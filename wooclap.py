@@ -77,20 +77,23 @@ def attack_open_question(question, users):
         for i in range(number_of_likes):
             headers = get_wooclap_headers(users[i])
             json_data = {'toggle': True}
-            response = requests.post(f'https://app.wooclap.com/api/questions/{question["_id"]}/answers/{answer_response["userAnswer"]["_id"]}/toggle_like', headers=headers, json=json_data)
+            requests.post(f'https://app.wooclap.com/api/questions/{question["_id"]}/answers/{answer_response["userAnswer"]["_id"]}/toggle_like', headers=headers, json=json_data)
+
+def create_users(list_of_users, event_code):
+    os.system('cls||clear')
+    print("######################################")
+    print("###### CREATING THE USERS ############")
+    print("######################################")
+    for user in list_of_users: # Augmente le nombre d'utilisateurs dés leur initialisation pour paraitre moins suspect
+        requests.post(f"https://app.wooclap.com/api/user?slug={event_code}", headers=get_wooclap_headers(user))
 
 number_of_users = int(input("How many users do you want to create?\n> "))
 list_of_users = generate_users(number_of_users)
 
 event_code = input("What is the event code of the Wooclap?\n> ")
 
-os.system('cls||clear')
-print("######################################")
-print("###### CREATING THE USERS ############")
-print("######################################")
 
-for user in list_of_users: # Augmente le nombre d'utilisateurs dés leur initialisation pour paraitre moins suspect
-    response = requests.post(f"https://app.wooclap.com/api/user?slug={event_code}", headers=get_wooclap_headers(user))
+create_users(list_of_users, event_code)
 
 max_user = False
 
@@ -106,17 +109,26 @@ while True:
     choice = int(input("> ").strip())
 
     if choice == 2:
+
         add_numb = int(input("How many users do you want to add?\n> ").strip())
         list_of_users = add_users(list_of_users, add_numb)
         len_list_users = len(list_of_users)
 
-        for i in range(len_list_users - add_numb, len_list_users): # Augmente le nombre d'utilisateurs dés leur initialisation pour paraitre moins suspect
-            response = requests.post(f"https://app.wooclap.com/api/user?slug={event_code}", headers=get_wooclap_headers(list_of_users[i]))
+        create_users(list_of_users, event_code)
         continue
+
     elif choice == 3:
-        event_code = input("What is the event code of the Wooclap?\n> ")
+
+        new_event_code = input("What is the event code of the Wooclap?\n> ")
+
+        if new_event_code == event_code: # Vérifie que c'est pas le même code qui a été rentré pour ne pas perdre de temps de vouloir recréer les utilisateurs si c'est le cas
+            continue
+        event_code = new_event_code
+        create_users(list_of_users, event_code)
         continue
+
     elif choice == 4:
+
         os.system('cls||clear')
         break
 

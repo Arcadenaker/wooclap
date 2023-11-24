@@ -5,6 +5,7 @@
 import requests
 import random
 import os
+import concurrent.futures
 
 id_last_user_answered = {} # Dictionnaire qui sauvegarde le dernier bot à avoir répondu par question (id)
 
@@ -108,18 +109,26 @@ def attack_open_question(question, users):
 
     if question['canLike']:
         number_of_likes = min(int(input(f"How many likes do you want to your answer? (MAX: {len(users)})\n> ").strip()), len(users))
-        for i in range(number_of_likes):
-            headers = get_wooclap_headers(users[i])
-            json_data = {'toggle': True}
-            requests.post(f'https://app.wooclap.com/api/questions/{question["_id"]}/answers/{response["userAnswer"]["_id"]}/toggle_like', headers=headers, json=json_data)
+        with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
+            for i in range(number_of_likes):
+                headers = get_wooclap_headers(users[i])
+                json_data = {'toggle': True}
+                executor.submit(requests.post, f'https://app.wooclap.com/api/questions/{question["_id"]}/answers/{response["userAnswer"]["_id"]}/toggle_like', headers=headers, json=json_data)
+
+def post_url(url, headers):
+    requests.post(url, headers=headers)
 
 def create_users(list_of_users, event_code):
+    workers = int(input("How many workers do you want ? "))
     os.system('cls||clear')
     print("######################################")
     print("######### CREATING THE USERS #########")
     print("######################################")
-    for user in list_of_users: # Augmente le nombre d'utilisateurs dés leur initialisation pour paraitre moins suspect
-        requests.post(f"https://app.wooclap.com/api/user?slug={event_code}", headers=get_wooclap_headers(user))
+    
+    with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
+        for user in list_of_users: # Augmente le nombre d'utilisateurs dés leur initialisation pour paraitre moins suspect
+            executor.submit(requests.post, f"https://app.wooclap.com/api/user?slug={event_code}", headers=get_wooclap_headers(user))
+            
 
 number_of_users = int(input("How many users do you want to create?\n> "))
 list_of_users = generate_users(number_of_users)

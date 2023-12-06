@@ -139,7 +139,8 @@ list_of_users = generate_users(number_of_users)
 
 event_code = input("What is the event code of the Wooclap?\n> ")
 
-workers = int(input("How many workers do you want ? "))
+#workers = int(input("How many workers do you want ? "))
+workers = 2
 
 create_users(list_of_users, event_code, workers)
 

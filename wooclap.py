@@ -65,7 +65,8 @@ def attack_mcq_question(question, users, workers):
             choices = [question['choices'][int(answer)-1]['_id']]
     except:
         return
-    if answer == "-1": # Donne l'occasion à l'utilisateur de revenir au menu
+    
+    if "-1" in answer: # Donne l'occasion à l'utilisateur de revenir au menu
         return
 
     start = 0
@@ -93,7 +94,7 @@ def attack_open_question(question, users):
 
     if len(users)-id_last_user_answered[question['_id']] == 0 and not question['multipleAnswers']: # Si tous les utilisateurs ont été utilisés pour répondre 
         return                                                                                     # et qu'on peut répondre qu'à une seule question
-        
+
     print(f"______Open question______\n\nTitle: {question['title']}")
 
     if question['allExpectedAnswers']:
@@ -226,7 +227,6 @@ def attack_matching_question(question, users, workers):
             
     id_last_user_answered[question['_id']] = end
 
-
 def create_users(list_of_users, event_code, workers):
     os.system('cls||clear')
     print("######################################")
@@ -298,6 +298,9 @@ while True:
             id_in_number += 1
         question = data["questions"][id_in_number]
     except:
+        continue
+
+    if question["canAnswer"] == False: # Si le professeur a bloqué les réponses
         continue
 
     if question["__t"] == "MCQ" or question["__t"] == "Poll":

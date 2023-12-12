@@ -85,7 +85,6 @@ def attack_mcq_question(question, users, workers):
 
     id_last_user_answered[question['_id']] = end
     
-
 def attack_open_question(question, users):
     global id_last_user_answered
 
@@ -143,8 +142,14 @@ def attack_rating_question(question, users, workers):
     print(f"______Rating question______\n\nTitle: {title}")
     for n in range(len(choices)):
         print(f"Question {n+1}: {choices[n]['choice']}")
-        input_rate = max(min(int(input(f"YOUR RATE (1 to {score_max}): ")), score_max), 1)
-        choice_req = {'score': input_rate, 'val': choices[n]["_id"]}
+        try:
+            input_rate = int(input(f"YOUR RATE [1 to {score_max}] (-1 to main menu): "))
+        except ValueError:
+            return
+        if input_rate == -1: # Donne l'occasion à l'utilisateur de revenir au menu
+            return
+        rate = max( min( input_rate, score_max ), 1 )
+        choice_req = {'score': rate, 'val': choices[n]["_id"]}
         answers.append(choice_req)
 
     start = 0
@@ -164,7 +169,6 @@ def attack_rating_question(question, users, workers):
             
 
     id_last_user_answered[question['_id']] = end
-
 
 def create_users(list_of_users, event_code, workers):
     os.system('cls||clear')

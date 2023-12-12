@@ -37,7 +37,7 @@ def get_event_data(event_code, user_id):
 def add_users(users, n):
     return users + generate_users(n)
 
-def attack_mcq_question(question, users, questionType, workers):
+def attack_mcq_question(question, users, workers):
     global id_last_user_answered
 
     if not question['_id'] in id_last_user_answered:
@@ -50,6 +50,7 @@ def attack_mcq_question(question, users, questionType, workers):
         return
 
     choices = []
+    questionType = question['__t']
     print(f"______{questionType}______\n\nQuestion: {question['title']}")
     for i, choice in enumerate(question['choices'], start=1):
         print(f"[{i}] {choice['choice']}" + (f" [Correct: {choice['isCorrect']}]" if questionType == "MCQ" else ""))
@@ -123,6 +124,48 @@ def attack_open_question(question, users):
                 json_data = {'toggle': True}
                 executor.submit(requests.post, f'https://app.wooclap.com/api/questions/{question["_id"]}/answers/{response["userAnswer"]["_id"]}/toggle_like', headers=headers, json=json_data)
 
+def attack_rating_question(question, users, workers):
+    global id_last_user_answered
+
+    if not question['_id'] in id_last_user_answered:
+        id_last_user_answered[question['_id']] = 0
+    
+    number_of_users = len(users)
+    available_users = number_of_users-id_last_user_answered[question['_id']]
+
+    if available_users == 0:
+        return
+    
+    score_max = question["maxRatingScore"]
+    title = question["title"]
+    choices = question["choices"]
+    answers = []
+    print(f"______Rating question______\n\nTitle: {title}")
+    for n in range(len(choices)):
+        print(f"Question {n+1}: {choices[n]['choice']}")
+        input_rate = max(min(int(input(f"YOUR RATE (1 to {score_max}): ")), score_max), 1)
+        choice_req = {'score': input_rate, 'val': choices[n]["_id"]}
+        answers.append(choice_req)
+
+    start = 0
+    end = int(input(f"How many of them do you want to spam (max: {available_users})?\n> "))+id_last_user_answered[question['_id']]
+
+    if end > number_of_users:
+        end = number_of_users
+
+    if id_last_user_answered[question['_id']] != 0:
+        start=id_last_user_answered[question['_id']]
+
+    with get_executor(workers) as executor:
+        for i in range(start, end):
+            headers = get_wooclap_headers(users[i])
+            json_data = {'choices': answers, 'token': f'z{users[i]}'}
+            executor.submit(requests.post, f'https://app.wooclap.com/api/questions/{question["_id"]}/push_answer', headers=headers, json=json_data)      
+            
+
+    id_last_user_answered[question['_id']] = end
+
+
 def create_users(list_of_users, event_code, workers):
     os.system('cls||clear')
     print("######################################")
@@ -163,7 +206,7 @@ while True:
         list_of_users = add_users(list_of_users, add_numb)
         len_list_users = len(list_of_users)
 
-        create_users(list_of_users, event_code)
+        create_users(list_of_users, event_code, workers)
         continue
 
     elif choice == 3:
@@ -173,7 +216,7 @@ while True:
         if new_event_code == event_code: # Vérifie que c'est pas le même code qui a été rentré pour ne pas perdre de temps de vouloir recréer les utilisateurs si c'est le cas
             continue
         event_code = new_event_code
-        create_users(list_of_users, event_code)
+        create_users(list_of_users, event_code, workers)
         continue
 
     elif choice == 4:
@@ -198,6 +241,8 @@ while True:
         continue
 
     if question["__t"] == "MCQ" or question["__t"] == "Poll":
-        attack_mcq_question(question, list_of_users, question["__t"], workers)
+        attack_mcq_question(question, list_of_users, workers)
     elif question["__t"] == "OpenQuestion":
         attack_open_question(question, list_of_users)
+    elif question["__t"] == "Rating":
+        attack_rating_question(question, list_of_users, workers)

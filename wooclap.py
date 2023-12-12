@@ -170,6 +170,63 @@ def attack_rating_question(question, users, workers):
 
     id_last_user_answered[question['_id']] = end
 
+def attack_matching_question(question, users, workers):
+    global id_last_user_answered
+
+    if not question['_id'] in id_last_user_answered:
+        id_last_user_answered[question['_id']] = 0
+    
+    number_of_users = len(users)
+    available_users = number_of_users-id_last_user_answered[question['_id']]
+
+    if available_users == 0:
+        return
+    
+    title = question["title"]
+    source = question["matchesSource"]
+    destination = question["matchesDestination"]
+
+    
+    answers = []
+    already_answered = []
+    print(f"______Matching question______\n\nTitle: {title}\n")
+    for n in range(len(source)):
+        print("[Question -----> Correct answer]")
+        print(f"{source[n]['text']} -----> {destination[n]['text']}\n")
+        print("WARNING: Answers can be used only once")
+        print("All answers:")
+        for d in range(len(destination)):
+            if d in already_answered:
+                continue
+            print(f"[{d+1}]{destination[d]['text']}")
+        try:
+            answer = int(input("Which one do you wanna respond?\n> "))
+        except ValueError:
+            return
+        if not answer-1 in range(len(source)) or answer-1 in already_answered:
+            return
+        already_answered.append(answer-1)
+        answers.append({'matchDestinationId': destination[answer-1]["_id"], 'matchSourceId': source[n]["_id"]})
+        os.system('cls||clear')
+
+    start = 0
+    end = int(input(f"How many of them do you want to spam (max: {available_users})?\n> "))+id_last_user_answered[question['_id']]
+
+    if end > number_of_users:
+        end = number_of_users
+
+    if id_last_user_answered[question['_id']] != 0:
+        start=id_last_user_answered[question['_id']]
+
+    with get_executor(workers) as executor:
+        for i in range(start, end):
+            headers = get_wooclap_headers(users[i])
+            json_data = {'userMatchingAnswers': answers, 'token': f'z{users[i]}'}
+            executor.submit(requests.post, f'https://app.wooclap.com/api/questions/{question["_id"]}/push_answer', headers=headers, json=json_data)      
+            
+    id_last_user_answered[question['_id']] = end
+
+
 def create_users(list_of_users, event_code, workers):
     os.system('cls||clear')
     print("######################################")
@@ -179,7 +236,6 @@ def create_users(list_of_users, event_code, workers):
     with get_executor(workers) as executor:
         for user in list_of_users: # Augmente le nombre d'utilisateurs dés leur initialisation pour paraitre moins suspect
             executor.submit(requests.post, f"https://app.wooclap.com/api/user?slug={event_code}", headers=get_wooclap_headers(user))
- 
 
 number_of_users = int(input("How many users do you want to create?\n> "))
 list_of_users = generate_users(number_of_users)
@@ -250,3 +306,5 @@ while True:
         attack_open_question(question, list_of_users)
     elif question["__t"] == "Rating":
         attack_rating_question(question, list_of_users, workers)
+    elif question["__t"] == "Matching":
+        attack_matching_question(question, list_of_users, workers)

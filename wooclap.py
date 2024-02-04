@@ -154,7 +154,10 @@ def attack_rating_question(question, users, workers):
         answers.append(choice_req)
 
     start = 0
-    end = int(input(f"How many of them do you want to spam (max: {available_users})?\n> "))+id_last_user_answered[question['_id']]
+    try:
+        end = int(input(f"\nHow many of them do you want to spam (max: {available_users})?\n> "))+id_last_user_answered[question['_id']]
+    except:
+        return
 
     if end > number_of_users:
         end = number_of_users
@@ -195,7 +198,7 @@ def attack_matching_question(question, users, workers):
         print("[Question -----> Correct answer]")
         print(f"{source[n]['text']} -----> {destination[n]['text']}\n")
         print("WARNING: Answers can be used only once")
-        print("All answers:")
+        print("All the answers available for the question:")
         for d in range(len(destination)):
             if d in already_answered:
                 continue
@@ -211,7 +214,10 @@ def attack_matching_question(question, users, workers):
         os.system('cls||clear')
 
     start = 0
-    end = int(input(f"How many of them do you want to spam (max: {available_users})?\n> "))+id_last_user_answered[question['_id']]
+    try:
+        end = int(input(f"How many of them do you want to spam (max: {available_users})?\n> "))+id_last_user_answered[question['_id']]
+    except:
+        return
 
     if end > number_of_users:
         end = number_of_users

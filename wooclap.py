@@ -17,7 +17,6 @@ def get_executor(max_workers):
         return concurrent.futures.ProcessPoolExecutor(max_workers=max_workers)
 
 def available_users(question_id, users):
-    global id_last_user_answered
     if not question_id in id_last_user_answered:
         id_last_user_answered[question_id] = 0
     
@@ -44,6 +43,8 @@ def send_req(question, answer, users, workers):
     answer_tag = "choices"
     if question['__t'] == "Matching":
         answer_tag = "userMatchingAnswers"
+    elif question['__t'] == "GuessNumber":
+        answer_tag = "val"
 
     with get_executor(workers) as executor:
         for i in range(start, end):
@@ -181,8 +182,21 @@ def attack_matching_question(question, users, workers):
 
     send_req(question, answers, users, workers)
 
-def attack_guessnumber_question(question, list_of_users, workers):
-    pass
+def attack_guessnumber_question(question, users, workers):
+    print(f"______GuessNumber question______\n\nTitle: {question['title']}\n")
+    print(f"Correct answer: {question['correctAnswer']}")
+    
+    min_value = question['minValue']
+    max_value = question['maxValue']
+    try:
+        answer = float(input(f"What do you want to answer? (NUMBER between {min_value} and {max_value}) ('-1' return to the menu)\n> ").replace(",","."))
+    except:
+        return
+    if answer == "-1": # Donne l'occasion à l'utilisateur de revenir au menu
+        return
+    answer = max(min(answer,max_value), min_value)
+
+    send_req(question, answer, users, workers)
 
 def create_users(list_of_users, event_code, workers):
     os.system('cls||clear')

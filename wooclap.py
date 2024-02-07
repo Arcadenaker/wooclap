@@ -232,26 +232,21 @@ while True:
         continue
 
     if choice == 2:
-
         add_numb = int(input("How many users do you want to add?\n> ").strip())
         list_of_users = add_users(list_of_users, add_numb)
         len_list_users = len(list_of_users)
-
         create_users(list_of_users, event_code, workers)
         continue
 
     elif choice == 3:
-
         new_event_code = input("What is the event code of the Wooclap?\n> ")
-
         if new_event_code == event_code: # Vérifie que c'est pas le même code qui a été rentré pour ne pas perdre de temps de vouloir recréer les utilisateurs si c'est le cas
             continue
         event_code = new_event_code
         create_users(list_of_users, event_code, workers)
         continue
-
+    
     elif choice == 4:
-
         os.system('cls||clear')
         break
 

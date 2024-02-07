@@ -45,6 +45,8 @@ def send_req(question, answer, users, workers):
         answer_tag = "userMatchingAnswers"
     elif question['__t'] == "GuessNumber":
         answer_tag = "val"
+    elif question['__t'] == "Sorting":
+        answer_tag = "userSortedChoices"
 
     with get_executor(workers) as executor:
         for i in range(start, end):
@@ -198,6 +200,22 @@ def attack_guessnumber_question(question, users, workers):
 
     send_req(question, answer, users, workers)
 
+def attack_sorting_question(question, users, workers):
+    print(f"______Sorting question______\n\nTitle: {question['title']}\n")
+    print("Correct arrangement of answers:")
+    answers = []
+    for i, choice in enumerate(question['choices'], start=1):
+        print(f"[{i}] {choice['text']}")
+    print("\nNow choose your arrangement using the numbers above:")
+    for i, choice in enumerate(question['choices'], start=1):
+        try:
+            answer = max(min(int(input(f"[{i}]> ")), len(question['choices'])+1), 1)
+        except:
+            return
+        answers.append({'choiceId': question['choices'][i-1]['_id'],'userGivenIdx': answer-1})
+    
+    send_req(question, answers, users, workers)
+    
 def create_users(list_of_users, event_code, workers):
     os.system('cls||clear')
     print("######################################")
@@ -279,3 +297,5 @@ while True:
         attack_matching_question(question, list_of_users, workers)
     elif question["__t"] == "GuessNumber":
         attack_guessnumber_question(question, list_of_users, workers)
+    elif question["__t"] == "Sorting":
+        attack_sorting_question(question, list_of_users, workers)

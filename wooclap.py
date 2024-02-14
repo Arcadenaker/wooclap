@@ -227,8 +227,7 @@ list_of_users = generate_users(number_of_users)
 
 event_code = input("What is the event code of the Wooclap?\n> ")
 
-#workers = int(input("How many workers do you want ? "))
-workers = 2
+workers = 2 # Nombre de multi-threading
 
 create_users(list_of_users, event_code, workers)
 
@@ -280,7 +279,7 @@ while True:
     except:
         continue
 
-    if question["canAnswer"] == False: # Si le professeur a bloqué les réponses
+    if question["canAnswer"] == False: # Si les réponses sont bloquées
         continue
 
     if question["__t"] == "MCQ" or question["__t"] == "Poll":

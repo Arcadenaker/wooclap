@@ -1,7 +1,3 @@
-# _TODO list:
-#.Connaitre les questions suivantes
-#.Voter réponses qui existent pas
-
 import requests
 import random
 import os

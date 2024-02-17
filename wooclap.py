@@ -212,6 +212,16 @@ def attack_sorting_question(question, users, workers):
     
     send_req(question, answers, users, workers)
     
+def attack_emojis(workers, users):
+    print("______Emoji spam______\n")
+    number_spam = int(input("How many emojis do you want to spam?\n> "))
+    list_of_emojis = ["👍","💙","🔥","😯","🎉"]
+    for i in range(number_spam):
+        emoji = list_of_emojis[random.randint(0, len(list_of_emojis)-1)]
+        with get_executor(workers) as executor:
+            headers = get_wooclap_headers(users[i%len(users)])
+            executor.submit(requests.post, f'https://app.wooclap.com/api/presentation/events/{event_code}/reactions', json={'emoji': emoji}, headers=headers)
+
 def create_users(list_of_users, event_code, workers):
     os.system('cls||clear')
     print("######################################")
@@ -294,3 +304,5 @@ while True:
         attack_guessnumber_question(question, list_of_users, workers)
     elif question["__t"] == "Sorting":
         attack_sorting_question(question, list_of_users, workers)
+    elif question["__t"] == "Instructions" and data["settings"]["hasEmojiReactions"]:
+        attack_emojis(workers, list_of_users)

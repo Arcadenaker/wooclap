@@ -232,6 +232,13 @@ def create_users(list_of_users, event_code, workers):
         for user in list_of_users: # Augmente le nombre d'utilisateurs dés leur initialisation pour paraitre moins suspect
             executor.submit(requests.post, f"https://app.wooclap.com/api/user?slug={event_code}", headers=get_wooclap_headers(user))
 
+def show_all_questions(questions):
+    os.system('cls||clear')
+    for i, question in enumerate(questions):
+        print(f"[{i+1}] TYPE: {question.get('__t', 'Unknown')} | TITLE: {question.get('title', 'Unknown')}")
+    input("\nPress enter to menu...")
+    return
+
 number_of_users = int(input("How many users do you want to create?\n> "))
 list_of_users = generate_users(number_of_users)
 
@@ -245,23 +252,31 @@ while True:
     os.system('cls||clear')
     print("################ MENU ################\n")
     print("[1] Attack the question")
-    print("[2] Add new users (Current: {})".format(len(list_of_users)))
-    print("[3] Change the event code (Current: {})".format(event_code))
-    print("[4] EXIT")
+    print("[2] See all questions")
+    print("[3] Add new users (Current: {})".format(len(list_of_users)))
+    print("[4] Change the event code (Current: {})".format(event_code))
+    print("[5] EXIT")
 
     try:
         choice = int(input("> ").strip())
     except:
         continue
+    
+    # Récupère les données de l'événement
+    data = get_event_data(event_code, list_of_users[0])
 
     if choice == 2:
+        show_all_questions(data["questions"])
+        continue
+
+    elif choice == 3:
         add_numb = int(input("How many users do you want to add?\n> ").strip())
         list_of_users = add_users(list_of_users, add_numb)
         len_list_users = len(list_of_users)
         create_users(list_of_users, event_code, workers)
         continue
 
-    elif choice == 3:
+    elif choice == 4:
         new_event_code = input("What is the event code of the Wooclap?\n> ")
         if new_event_code == event_code: # Vérifie que c'est pas le même code qui a été rentré pour ne pas perdre de temps de vouloir recréer les utilisateurs si c'est le cas
             continue
@@ -269,14 +284,13 @@ while True:
         create_users(list_of_users, event_code, workers)
         continue
     
-    elif choice == 4:
+    elif choice == 5:
         os.system('cls||clear')
         break
 
     os.system('cls||clear')
 
     headers = get_wooclap_headers(list_of_users[0])
-    data = get_event_data(event_code, list_of_users[0])
     number_of_questions = len(data["questions"])
     id_in_number = 0
 
